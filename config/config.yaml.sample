@@ -1,0 +1,17 @@
+db:
+  mysql:
+    log_mode: true
+    addr: "127.0.0.1"
+    user: ""
+    password: ""
+    db_name: "das_database"
+    max_open_conn: 100
+    max_idle_conn: 50
+cloudflare:
+  api_key: ""
+  api_email: ""
+  zone_name: "bit.host"
+ipfs:
+  gateway: "cloudflare-ipfs.com"
+hostname:
+  suffix: ".host"
