@@ -1,5 +1,5 @@
 # DASLink
-DASLink is a simple tool to link ipfs content from DAS.
+DASLink is a simple tool to link ipfs content from [DAS](https://da.systems/).
 
 ## How does it work?
 Dependent on [DNSLink](https://docs.ipfs.io/concepts/dnslink/), [Cloudflare ipfs gateway](https://developers.cloudflare.com/distributed-web/ipfs-gateway), [Cloudflare DNS](https://api.cloudflare.com/#dns-records-for-a-zone-properties) and [das-database](https://github.com/DeAccountSystems/das-database).
