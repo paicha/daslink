@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var pollingAccountList = &[]string{}
+var pollingAccounts = sync.Map{}
 
 func runWorker(wg *sync.WaitGroup, db *dao.DbDao, dnsData *DNSData, jobsChan chan string) {
 	pollingChan := make(chan string, len(jobsChan)*2)
@@ -21,7 +21,7 @@ func runWorker(wg *sync.WaitGroup, db *dao.DbDao, dnsData *DNSData, jobsChan cha
 					ipfsRecordList, _ := db.FindIpfsRecordInfoByAccount(account)
 					if len(ipfsRecordList) == 0 {
 						dnsData.deleteDNSRecordByAccount(account)
-						removeFromPollingList(account)
+						pollingAccounts.Delete(account)
 					} else {
 						priorityRecord := findPriorityRecord(ipfsRecordList[0], ipfsRecordList)
 						ipfsRecord, err := dnsData.updateDNSRecord(priorityRecord)
@@ -34,16 +34,10 @@ func runWorker(wg *sync.WaitGroup, db *dao.DbDao, dnsData *DNSData, jobsChan cha
 						}()
 					}
 				case account := <-jobsChan:
-					polling := false
-					for _, a := range *pollingAccountList {
-						if account == a {
-							polling = true
-							break
-						}
-					}
+					_, polling := pollingAccounts.Load(account)
 					if !polling {
 						pollingChan <- account
-						*pollingAccountList = append(*pollingAccountList, account)
+						pollingAccounts.Store(account, true)
 					}
 				case <-ctxServer.Done():
 					log.Info("worker exit")
@@ -52,14 +46,5 @@ func runWorker(wg *sync.WaitGroup, db *dao.DbDao, dnsData *DNSData, jobsChan cha
 				}
 			}
 		}()
-	}
-}
-
-func removeFromPollingList(account string) {
-	for i, a := range *pollingAccountList {
-		if a == account {
-			*pollingAccountList = append((*pollingAccountList)[:i], (*pollingAccountList)[i+1:]...)
-			break
-		}
 	}
 }

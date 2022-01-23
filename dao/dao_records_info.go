@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"strings"
 	"time"
 )
 
@@ -27,19 +26,16 @@ func (t *TableRecordsInfo) TableName() string {
 }
 
 func (d *DbDao) FindRecordInfoByKeys(keys []string) (recordInfo []TableRecordsInfo, err error) {
-	for i := 0; i < len(keys); i++ {
-		keys[i] = "`key` = " + "'" + keys[i] + "'"
-	}
-	err = d.db.Where(strings.Join(keys, " OR ")).Find(&recordInfo).Error
+	err = d.db.Where("`key` IN (?)", keys).Find(&recordInfo).Error
 	return
 }
 
 func (d *DbDao) FindIpfsRecordInfoByMaxId(id uint64) (recordInfo []TableRecordsInfo, err error) {
-	err = d.db.Where("(`key` = 'ipfs' OR `key` = 'ipns') AND id > ? ", id).Find(&recordInfo).Error
+	err = d.db.Where("`key` IN(?) AND id > ? ", []string{"ipfs", "ipns"}, id).Find(&recordInfo).Error
 	return
 }
 
 func (d *DbDao) FindIpfsRecordInfoByAccount(account string) (recordInfo []TableRecordsInfo, err error) {
-	err = d.db.Where("(`key` = 'ipfs' OR `key` = 'ipns') AND account = ? ", account).Find(&recordInfo).Error
+	err = d.db.Where("`key` IN(?) AND account = ? ", []string{"ipfs", "ipns"}, account).Find(&recordInfo).Error
 	return
 }

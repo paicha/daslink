@@ -4,20 +4,14 @@ import (
 	"daslink/dao"
 )
 
-var skipIpfsRecordIndex = []int{}
+var skipIpfsRecordIndex = make(map[int]bool)
 
 func runSyncIpfsRecords(ipfsRecordList []dao.TableRecordsInfo, dnsData *DNSData, jobsChan chan string) {
 	// batch update dns record
 	validAccounts := []string{}
 	for index, ipfsRecord := range ipfsRecordList {
 		// skip the same records that have already been processed
-		skip := false
-		for _, sIndex := range skipIpfsRecordIndex {
-			if index == sIndex {
-				skip = true
-				break
-			}
-		}
+		_, skip := skipIpfsRecordIndex[index]
 		if skip {
 			continue
 		}
@@ -47,7 +41,7 @@ func findPriorityRecord(ipfsRecord dao.TableRecordsInfo, ipfsRecordList []dao.Ta
 		if candidateRecord.Account == priorityRecord.Account {
 			count += 1
 			if count > 1 {
-				skipIpfsRecordIndex = append(skipIpfsRecordIndex, index)
+				skipIpfsRecordIndex[index] = true
 				if candidateRecord.Key == priorityRecord.Key {
 					// select the first record if the key is the same
 					if priorityRecord.Id > candidateRecord.Id {
