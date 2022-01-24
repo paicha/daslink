@@ -162,23 +162,27 @@ func (d *DNSData) deleteAllInvalidDNSRecord(validAccounts []string) {
 }
 
 func (d *DNSData) deleteDNSRecord(record cloudflare.DNSRecord) {
-	d.api.DeleteDNSRecord(ctxServer, d.zoneID, record.ID)
-	if record.Type == "CNAME" {
-		for i, cnameRecord := range *d.cnameRecords {
-			if cnameRecord.ID == record.ID {
-				*d.cnameRecords = append((*d.cnameRecords)[:i], (*d.cnameRecords)[i+1:]...)
-				break
+	err := d.api.DeleteDNSRecord(ctxServer, d.zoneID, record.ID)
+	if err != nil {
+		log.Fatalf("cloudflare DeleteDNSRecord err:%s", err)
+	} else {
+		if record.Type == "CNAME" {
+			for i, cnameRecord := range *d.cnameRecords {
+				if cnameRecord.ID == record.ID {
+					*d.cnameRecords = append((*d.cnameRecords)[:i], (*d.cnameRecords)[i+1:]...)
+					break
+				}
+			}
+		} else if record.Type == "TXT" {
+			for i, txtRecord := range *d.txtRecords {
+				if txtRecord.ID == record.ID {
+					*d.txtRecords = append((*d.txtRecords)[:i], (*d.txtRecords)[i+1:]...)
+					break
+				}
 			}
 		}
-	} else if record.Type == "TXT" {
-		for i, txtRecord := range *d.txtRecords {
-			if txtRecord.ID == record.ID {
-				*d.txtRecords = append((*d.txtRecords)[:i], (*d.txtRecords)[i+1:]...)
-				break
-			}
-		}
+		log.Debugf("Successfully delete %s record: %s", record.Type, record.Name)
 	}
-	log.Debugf("Successfully delete %s record: %s", record.Type, record.Name)
 }
 
 func (d *DNSData) deleteDNSRecordByAccount(account string) {

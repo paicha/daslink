@@ -10,8 +10,8 @@ db:
 cloudflare:
   api_key: ""
   api_email: ""
-  zone_name: "bit.host"
+  zone_name: "bit.cc"
 ipfs:
   gateway: "cloudflare-ipfs.com"
 hostname:
-  suffix: ".host"
+  suffix: ".cc"
