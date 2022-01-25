@@ -16,7 +16,7 @@ jobs:
       - name: Compile
         shell: bash
         run: | # compile
-          git checkout dev
+          git checkout main
           go build
           mv daslink daslink_new
           md5sum daslink_new
