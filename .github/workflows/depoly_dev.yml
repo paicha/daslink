@@ -49,9 +49,9 @@ jobs:
             cd ${{ secrets.DEV_DST_DIR }}
             md5sum daslink_new
             chmod +x daslink_new
-            mv daslink daslink.bak
-            mv daslink_new daslink
-            
+            mv daslink_server daslink_server.bak
+            mv daslink_new daslink_server
+            supervisorctl restart das_link
   clean:
     name: Clean expired artifacts
     runs-on: ubuntu-latest
