@@ -1,0 +1,62 @@
+name: Build & Deploy & Clean
+on:
+  push:
+    branches: [ dev ]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Compile
+        shell: bash
+        run: | # compile
+          git checkout dev
+          go build
+          mv daslink daslink_new
+          md5sum daslink_new
+      - name: Upload bin
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: daslink_new
+  deploy:
+    name: Rsync bin
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+      - name: Download bin
+        uses: pranksteess/ssh-rsync-action@v2.0
+        with:
+          key: ${{ secrets.RSYNC_KEY }}
+          rsync_flags: ' -avzr --delete --progress '
+          dst_host: ${{ secrets.DEV_DST_HOST }}
+          dst_user: ${{ secrets.DEV_USER }}
+          proxy_host: ${{ secrets.PROXY_HOST }}
+          proxy_user: ${{ secrets.DEV_USER }}
+          src_file: daslink_new # target file
+          proxy_file_path: ${{ secrets.PROXY_DIR }} 
+          dst_file_path: ${{ secrets.DEV_DST_DIR }}
+          ssh_after: |
+            cd ${{ secrets.DEV_DST_DIR }}
+            md5sum daslink_new
+            chmod +x daslink_new
+            mv daslink daslink.bak
+            mv daslink_new daslink
+            supervisorctl restart das_link
+  clean:
+    name: Clean expired artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove old artifacts
+        uses: c-hive/gha-remove-artifacts@v1
+        with:
+          age: '3 hours'
