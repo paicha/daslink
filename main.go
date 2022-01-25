@@ -66,7 +66,12 @@ func runServer(ctx *cli.Context) error {
 	ipfsRecordList, _ := dbDao.FindRecordInfoByKeys([]string{"ipfs", "ipns"})
 	jobsChan := make(chan string, len(ipfsRecordList))
 
-	runWatcher(&wgServer, dbDao, ipfsRecordList[len(ipfsRecordList)-1].Id, jobsChan)
+	maxId := uint64(0)
+	if len(ipfsRecordList) > 0 {
+		maxId = ipfsRecordList[len(ipfsRecordList)-1].Id
+	}
+
+	runWatcher(&wgServer, dbDao, maxId, jobsChan)
 	log.Info("Watching new ipfs records...")
 
 	runSyncIpfsRecords(ipfsRecordList, dnsData, jobsChan)
