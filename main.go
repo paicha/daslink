@@ -64,7 +64,12 @@ func runServer(ctx *cli.Context) error {
 
 	// read all das accounts that has ipfs or ipns record
 	ipfsRecordList, _ := dbDao.FindRecordInfoByKeys([]string{"ipfs", "ipns"})
-	jobsChan := make(chan string, len(ipfsRecordList))
+
+	jobsChanLength := len(ipfsRecordList)
+	if jobsChanLength == 0 {
+		jobsChanLength = 1
+	}
+	jobsChan := make(chan string, jobsChanLength)
 
 	maxId := uint64(0)
 	if len(ipfsRecordList) > 0 {
