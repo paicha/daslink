@@ -51,7 +51,7 @@ jobs:
             chmod +x daslink_new
             mv daslink daslink.bak
             mv daslink_new daslink
-            supervisorctl restart das_link
+            
   clean:
     name: Clean expired artifacts
     runs-on: ubuntu-latest
