@@ -3,6 +3,7 @@ package main
 import (
 	"daslink/dao"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -15,12 +16,13 @@ type DNSData struct {
 	api            *cloudflare.API
 	zoneID         string
 	ipfsCname      string
+	skynetCname    string
 	hostNameSuffix string
 	cnameRecords   *[]cloudflare.DNSRecord
 	txtRecords     *[]cloudflare.DNSRecord
 }
 
-func NewDNSData(apiKey, apiEmail, zoneName, ipfsCname, hostNameSuffix string) (*DNSData, error) {
+func NewDNSData(apiKey, apiEmail, zoneName, ipfsCname, skynetCname, hostNameSuffix string) (*DNSData, error) {
 	api, err := cloudflare.New(apiKey, apiEmail)
 	if err != nil {
 		return nil, fmt.Errorf("cloudflare err:%s", err.Error())
@@ -34,6 +36,7 @@ func NewDNSData(apiKey, apiEmail, zoneName, ipfsCname, hostNameSuffix string) (*
 		api:            api,
 		zoneID:         zoneID,
 		ipfsCname:      ipfsCname,
+		skynetCname:    skynetCname,
 		hostNameSuffix: hostNameSuffix,
 	}
 
@@ -65,8 +68,8 @@ func (d *DNSData) getAllDNSRecord() error {
 	return nil
 }
 
-func (d *DNSData) updateDNSRecord(ipfsRecord dao.TableRecordsInfo) (dao.TableRecordsInfo, error) {
-	ttl, _ := strconv.Atoi(ipfsRecord.Ttl)
+func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.TableRecordsInfo, error) {
+	ttl, _ := strconv.Atoi(contentRecord.Ttl)
 	if ttl < 60 {
 		ttl = 60
 	} else if ttl > 86400 {
@@ -78,11 +81,37 @@ func (d *DNSData) updateDNSRecord(ipfsRecord dao.TableRecordsInfo) (dao.TableRec
 		oldRecords := []cloudflare.DNSRecord{}
 		if recordType == "CNAME" {
 			oldRecords = *d.cnameRecords
-			newRecord = cloudflare.DNSRecord{Type: recordType, Name: ipfsRecord.Account + d.hostNameSuffix, Content: d.ipfsCname, TTL: ttl}
+			content := d.ipfsCname
+			// CNAME content for skynet
+			if contentRecord.Key == "sia" {
+				content = d.skynetCname
+			}
+			newRecord = cloudflare.DNSRecord{
+				Type:    recordType,
+				Name:    contentRecord.Account + d.hostNameSuffix,
+				Content: content,
+				TTL:     ttl,
+			}
 		} else if recordType == "TXT" {
 			oldRecords = *d.txtRecords
-			txt := "dnslink=/" + ipfsRecord.Key + "/" + ipfsRecord.Value
-			newRecord = cloudflare.DNSRecord{Type: recordType, Name: "_dnslink." + ipfsRecord.Account + d.hostNameSuffix, Content: txt, TTL: ttl}
+			value := contentRecord.Value
+			// compatible with ipfs://xxx sia://xxx https://ipfs.io/ipfs/xxx
+			if contentRecord.Key == "sia" || contentRecord.Key == "ipfs" {
+				re := regexp.MustCompile(`([0-9A-Za-z]{46})`)
+				if results := re.FindStringSubmatch(value); len(results) == 2 {
+					value = results[1]
+				}
+			}
+			txt := "dnslink=/" + contentRecord.Key + "/" + value
+			if contentRecord.Key == "sia" {
+				txt = "dnslink=/skynet-ns/" + value
+			}
+			newRecord = cloudflare.DNSRecord{
+				Type:    recordType,
+				Name:    "_dnslink." + contentRecord.Account + d.hostNameSuffix,
+				Content: txt,
+				TTL:     ttl,
+			}
 		}
 
 		recordExist := false
@@ -102,7 +131,7 @@ func (d *DNSData) updateDNSRecord(ipfsRecord dao.TableRecordsInfo) (dao.TableRec
 
 		_, isDomainName = dns.IsDomainName(newRecord.Name)
 		if !isDomainName {
-			return ipfsRecord, fmt.Errorf("%s not a vlaid domain name", newRecord.Name)
+			return contentRecord, fmt.Errorf("%s not a vlaid domain name", newRecord.Name)
 		} else if !recordExist {
 			record, err := d.api.CreateDNSRecord(ctxServer, d.zoneID, newRecord)
 			if err != nil {
@@ -137,13 +166,13 @@ func (d *DNSData) updateDNSRecord(ipfsRecord dao.TableRecordsInfo) (dao.TableRec
 			log.Debugf("Successfully updated %s record: %s", recordType, newRecord.Name)
 		}
 	}
-	return ipfsRecord, nil
+	return contentRecord, nil
 }
 
 func (d *DNSData) deleteAllInvalidDNSRecord(validAccounts []string) {
 	for _, oldRecords := range [][]cloudflare.DNSRecord{*d.cnameRecords, *d.txtRecords} {
 		for _, oldRecord := range oldRecords {
-			if (oldRecord.Type == "CNAME" && oldRecord.Content == d.ipfsCname) || oldRecord.Type == "TXT" && strings.HasPrefix(oldRecord.Name, "_dnslink.") {
+			if (oldRecord.Type == "CNAME" && (oldRecord.Content == d.ipfsCname || oldRecord.Content == d.skynetCname)) || oldRecord.Type == "TXT" && strings.HasPrefix(oldRecord.Name, "_dnslink.") {
 				recordOutDated := true
 				for _, validAccount := range validAccounts {
 					oldRecordName, _ := idna.ToUnicode(oldRecord.Name)

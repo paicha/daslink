@@ -47,9 +47,10 @@ type CfgServer struct {
 		ApiEmail string `json:"api_email" yaml:"api_email"`
 		ZoneName string `json:"zone_name" yaml:"zone_name"`
 	} `json:"cloudflare" yaml:"cloudflare"`
-	IPFS struct {
-		Gateway string `json:"gateway" yaml:"gateway"`
-	} `json:"ipfs" yaml:"ipfs"`
+	Gateway struct {
+		Ipfs   string `json:"ipfs" yaml:"ipfs"`
+		Skynet string `json:"skynet" yaml:"skynet"`
+	} `json:"gateway" yaml:"gateway"`
 	HostName struct {
 		Suffix string `json:"suffix" yaml:"suffix"`
 	} `json:"hostname" yaml:"hostname"`

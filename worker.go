@@ -18,19 +18,19 @@ func runWorker(wg *sync.WaitGroup, db *dao.DbDao, dnsData *DNSData, jobsChan cha
 				default:
 					account := <-pollingChan
 					log.Infof("polling %s DNS record", account)
-					ipfsRecordList, _ := db.FindIpfsRecordInfoByAccount(account)
-					if len(ipfsRecordList) == 0 {
+					contentRecordList, _ := db.FindContentRecordInfoByAccount(account)
+					if len(contentRecordList) == 0 {
 						dnsData.deleteDNSRecordByAccount(account)
 						pollingAccounts.Delete(account)
 					} else {
-						priorityRecord := findPriorityRecord(ipfsRecordList[0], ipfsRecordList)
-						ipfsRecord, err := dnsData.updateDNSRecord(priorityRecord)
+						priorityRecord := findPriorityRecord(contentRecordList[0], contentRecordList)
+						contentRecord, err := dnsData.updateDNSRecord(priorityRecord)
 						if err != nil {
 							log.Errorf("update %s DNS record failed: %s", priorityRecord.Account, err)
 						}
 						go func() {
 							time.Sleep(60 * time.Second)
-							pollingChan <- ipfsRecord.Account
+							pollingChan <- contentRecord.Account
 						}()
 					}
 				case account := <-jobsChan:

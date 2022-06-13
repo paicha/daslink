@@ -11,7 +11,8 @@ cloudflare:
   api_key: ""
   api_email: ""
   zone_name: "bit.cc"
-ipfs:
-  gateway: "cloudflare-ipfs.com"
+gateway:
+  ipfs: "cloudflare-ipfs.com"
+  skynet: "siasky.net"
 hostname:
   suffix: ".cc"

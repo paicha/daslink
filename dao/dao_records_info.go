@@ -30,12 +30,12 @@ func (d *DbDao) FindRecordInfoByKeys(keys []string) (recordInfo []TableRecordsIn
 	return
 }
 
-func (d *DbDao) FindIpfsRecordInfoByMaxId(id uint64) (recordInfo []TableRecordsInfo, err error) {
-	err = d.db.Where("`key` IN(?) AND id > ? ", []string{"ipfs", "ipns"}, id).Find(&recordInfo).Error
+func (d *DbDao) FindContentRecordInfoByMaxId(id uint64) (recordInfo []TableRecordsInfo, err error) {
+	err = d.db.Where("`key` IN(?) AND id > ? ", []string{"ipfs", "ipns", "sia"}, id).Find(&recordInfo).Error
 	return
 }
 
-func (d *DbDao) FindIpfsRecordInfoByAccount(account string) (recordInfo []TableRecordsInfo, err error) {
-	err = d.db.Where("`key` IN(?) AND account = ? ", []string{"ipfs", "ipns"}, account).Find(&recordInfo).Error
+func (d *DbDao) FindContentRecordInfoByAccount(account string) (recordInfo []TableRecordsInfo, err error) {
+	err = d.db.Where("`key` IN(?) AND account = ? ", []string{"ipfs", "ipns", "sia"}, account).Find(&recordInfo).Error
 	return
 }

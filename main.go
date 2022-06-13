@@ -56,31 +56,31 @@ func runServer(ctx *cli.Context) error {
 
 	// dns
 	cfgCloudflare := config.Cfg.CloudFlare
-	dnsData, err := NewDNSData(cfgCloudflare.ApiKey, cfgCloudflare.ApiEmail, cfgCloudflare.ZoneName, config.Cfg.IPFS.Gateway, config.Cfg.HostName.Suffix)
+	dnsData, err := NewDNSData(cfgCloudflare.ApiKey, cfgCloudflare.ApiEmail, cfgCloudflare.ZoneName, config.Cfg.Gateway.Ipfs, config.Cfg.Gateway.Skynet, config.Cfg.HostName.Suffix)
 	if err != nil {
 		return fmt.Errorf("NewDNSData err:%s", err.Error())
 	}
 	log.Info("dns data ok")
 
-	// read all das accounts that has ipfs or ipns record
-	ipfsRecordList, _ := dbDao.FindRecordInfoByKeys([]string{"ipfs", "ipns"})
+	// read all das accounts that has ipfs/ipns/sia record
+	contentRecordList, _ := dbDao.FindRecordInfoByKeys([]string{"ipfs", "ipns", "sia"})
 
-	jobsChanLength := len(ipfsRecordList)
+	jobsChanLength := len(contentRecordList)
 	if jobsChanLength == 0 {
 		jobsChanLength = 1
 	}
 	jobsChan := make(chan string, jobsChanLength)
 
 	maxId := uint64(0)
-	if len(ipfsRecordList) > 0 {
-		maxId = ipfsRecordList[len(ipfsRecordList)-1].Id
+	if len(contentRecordList) > 0 {
+		maxId = contentRecordList[len(contentRecordList)-1].Id
 	}
 
 	runWatcher(&wgServer, dbDao, maxId, jobsChan)
-	log.Info("Watching new ipfs records...")
+	log.Info("Watching new content records...")
 
-	runSyncIpfsRecords(ipfsRecordList, dnsData, jobsChan)
-	log.Info("All ipfs records have been synchronized")
+	runSyncContentRecords(contentRecordList, dnsData, jobsChan)
+	log.Info("All content records have been synchronized")
 
 	runWorker(&wgServer, dbDao, dnsData, jobsChan)
 	log.Info("Worker started")

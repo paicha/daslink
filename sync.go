@@ -4,51 +4,54 @@ import (
 	"daslink/dao"
 )
 
-var skipIpfsRecordIndex = make(map[int]bool)
+var skipContentRecordIndex = make(map[int]bool)
 
-func runSyncIpfsRecords(ipfsRecordList []dao.TableRecordsInfo, dnsData *DNSData, jobsChan chan string) {
+func runSyncContentRecords(contentRecordList []dao.TableRecordsInfo, dnsData *DNSData, jobsChan chan string) {
 	// batch update dns record
 	validAccounts := []string{}
-	for index, ipfsRecord := range ipfsRecordList {
+	for index, contentRecord := range contentRecordList {
 		// skip the same records that have already been processed
-		_, skip := skipIpfsRecordIndex[index]
+		_, skip := skipContentRecordIndex[index]
 		if skip {
 			continue
 		}
 
-		priorityRecord := findPriorityRecord(ipfsRecord, ipfsRecordList)
+		priorityRecord := findPriorityRecord(contentRecord, contentRecordList)
 
 		// update CNAME and TXT record
-		ipfsRecord, err := dnsData.updateDNSRecord(priorityRecord)
+		contentRecord, err := dnsData.updateDNSRecord(priorityRecord)
 		if err != nil {
 			log.Errorf("updateDNSRecord error: %s", err)
 			continue
 		}
 
 		// add accounts to worker pool
-		jobsChan <- ipfsRecord.Account
-		validAccounts = append(validAccounts, ipfsRecord.Account)
+		jobsChan <- contentRecord.Account
+		validAccounts = append(validAccounts, contentRecord.Account)
 	}
 
 	// batch delete invalid DNS records
 	dnsData.deleteAllInvalidDNSRecord(validAccounts)
 }
 
-func findPriorityRecord(ipfsRecord dao.TableRecordsInfo, ipfsRecordList []dao.TableRecordsInfo) dao.TableRecordsInfo {
-	priorityRecord := ipfsRecord
+func findPriorityRecord(contentRecord dao.TableRecordsInfo, contentRecordList []dao.TableRecordsInfo) dao.TableRecordsInfo {
+	priorityRecord := contentRecord
 	count := 0
-	for index, candidateRecord := range ipfsRecordList {
+	for index, candidateRecord := range contentRecordList {
 		if candidateRecord.Account == priorityRecord.Account {
 			count += 1
 			if count > 1 {
-				skipIpfsRecordIndex[index] = true
+				skipContentRecordIndex[index] = true
 				if candidateRecord.Key == priorityRecord.Key {
 					// select the first record if the key is the same
 					if priorityRecord.Id > candidateRecord.Id {
 						priorityRecord = candidateRecord
 					}
+				} else if priorityRecord.Key == "sia" {
+					// Skynet record lowest priority
+					priorityRecord = candidateRecord
 				} else if candidateRecord.Key == "ipns" {
-					// ipns record priority
+					// ipns record highest priority
 					priorityRecord = candidateRecord
 				}
 			}
