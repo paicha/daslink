@@ -135,7 +135,8 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 		} else if !recordExist {
 			record, err := d.api.CreateDNSRecord(ctxServer, d.zoneID, newRecord)
 			if err != nil {
-				log.Fatalf("cloudflare CreateDNSRecord err:%s", err)
+				return contentRecord, fmt.Errorf("cloudflare CreateDNSRecord err: %s", err.Error())
+				//log.Fatalf("cloudflare CreateDNSRecord err:%s", err)
 			}
 			if recordType == "CNAME" {
 				*d.cnameRecords = append(*d.cnameRecords, record.Result)
@@ -146,7 +147,8 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 		} else if oldRecordId != "" {
 			err := d.api.UpdateDNSRecord(ctxServer, d.zoneID, oldRecordId, newRecord)
 			if err != nil {
-				log.Fatalf("cloudflare UpdateDNSRecord err:%s", err)
+				return contentRecord, fmt.Errorf("cloudflare UpdateDNSRecord err: %s", err.Error())
+				//log.Fatalf("cloudflare UpdateDNSRecord err:%s", err)
 			}
 			if recordType == "CNAME" {
 				for i, cnameRecord := range *d.cnameRecords {

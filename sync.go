@@ -21,7 +21,7 @@ func runSyncContentRecords(contentRecordList []dao.TableRecordsInfo, dnsData *DN
 		// update CNAME and TXT record
 		contentRecord, err := dnsData.updateDNSRecord(priorityRecord)
 		if err != nil {
-			log.Errorf("updateDNSRecord error: %s", err)
+			log.Errorf("updateDNSRecord error: %s [%s - %s]", err, priorityRecord.AccountId, priorityRecord.Account)
 			continue
 		}
 
