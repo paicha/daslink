@@ -97,7 +97,7 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 			value := contentRecord.Value
 			// compatible with ipfs://xxx sia://xxx https://ipfs.io/ipfs/xxx
 			if contentRecord.Key == "skynet" || contentRecord.Key == "ipfs" {
-				re := regexp.MustCompile(`([0-9A-Za-z-]{46})`)
+				re := regexp.MustCompile(`([0-9A-Za-z-_]{46})`)
 				if results := re.FindStringSubmatch(value); len(results) == 2 {
 					value = results[1]
 				}
