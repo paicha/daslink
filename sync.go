@@ -47,7 +47,7 @@ func findPriorityRecord(contentRecord dao.TableRecordsInfo, contentRecordList []
 					if priorityRecord.Id > candidateRecord.Id {
 						priorityRecord = candidateRecord
 					}
-				} else if priorityRecord.Key == "sia" {
+				} else if priorityRecord.Key == "skynet" {
 					// Skynet record lowest priority
 					priorityRecord = candidateRecord
 				} else if candidateRecord.Key == "ipns" {

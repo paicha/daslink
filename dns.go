@@ -83,7 +83,7 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 			oldRecords = *d.cnameRecords
 			content := d.ipfsCname
 			// CNAME content for skynet
-			if contentRecord.Key == "sia" {
+			if contentRecord.Key == "skynet" {
 				content = d.skynetCname
 			}
 			newRecord = cloudflare.DNSRecord{
@@ -96,14 +96,14 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 			oldRecords = *d.txtRecords
 			value := contentRecord.Value
 			// compatible with ipfs://xxx sia://xxx https://ipfs.io/ipfs/xxx
-			if contentRecord.Key == "sia" || contentRecord.Key == "ipfs" {
+			if contentRecord.Key == "skynet" || contentRecord.Key == "ipfs" {
 				re := regexp.MustCompile(`([0-9A-Za-z-]{46})`)
 				if results := re.FindStringSubmatch(value); len(results) == 2 {
 					value = results[1]
 				}
 			}
 			txt := "dnslink=/" + contentRecord.Key + "/" + value
-			if contentRecord.Key == "sia" {
+			if contentRecord.Key == "skynet" {
 				txt = "dnslink=/skynet-ns/" + value
 			}
 			newRecord = cloudflare.DNSRecord{
