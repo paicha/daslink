@@ -62,8 +62,8 @@ func runServer(ctx *cli.Context) error {
 	}
 	log.Info("dns data ok")
 
-	// read all das accounts that has ipfs/ipns/sia record
-	contentRecordList, _ := dbDao.FindRecordInfoByKeys([]string{"ipfs", "ipns", "sia"})
+	// read all das accounts that has ipfs/ipns/skynet record
+	contentRecordList, _ := dbDao.FindRecordInfoByKeys([]string{"ipfs", "ipns", "skynet"})
 
 	jobsChanLength := len(contentRecordList)
 	if jobsChanLength == 0 {
