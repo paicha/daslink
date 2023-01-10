@@ -82,18 +82,17 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 		if recordType == "CNAME" {
 			oldRecords = *d.cnameRecords
 			content := d.ipfsCname
-			proxied := new(bool)
+			proxied := true
 			// CNAME content for skynet
 			if contentRecord.Key == "skynet" {
 				content = d.skynetCname
-				*proxied = true
 			}
 			newRecord = cloudflare.DNSRecord{
 				Type:    recordType,
 				Name:    contentRecord.Account + d.hostNameSuffix,
 				Content: content,
 				TTL:     ttl,
-				Proxied: proxied,
+				Proxied: &proxied,
 			}
 		} else if recordType == "TXT" {
 			oldRecords = *d.txtRecords
@@ -124,7 +123,7 @@ func (d *DNSData) updateDNSRecord(contentRecord dao.TableRecordsInfo) (dao.Table
 			if newRecord.Name == oldRecordName {
 				log.Infof("%s record exist: %s", recordType, newRecord.Name)
 				recordExist = true
-				if newRecord.Content != oldRecord.Content || newRecord.TTL != oldRecord.TTL {
+				if newRecord.Content != oldRecord.Content || (recordType == "TXT" && newRecord.TTL != oldRecord.TTL) {
 					log.Infof("%s record exist and NEED to update: %s", recordType, newRecord.Name)
 					oldRecordId = oldRecord.ID
 				}
